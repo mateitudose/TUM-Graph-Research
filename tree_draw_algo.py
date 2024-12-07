@@ -9,7 +9,7 @@ def read_graph_console(graph):
     for i in range(vertices - 1):
         u, v = map(int, input().split())
         graph.add_edge(u, v)
-
+        parent_list[v] = u
 
 def generate_pythagorean_triplets(first_n):
     triplets = []
@@ -34,6 +34,27 @@ def calculate_subtree_sizes(graph, root, parent, subtree_sizes):
     subtree_sizes[root] = size
     return size
 
+def slope_translation(x_father, y_father, x_initial, y_initial):
+    x_translation = x_father + x_initial
+    y_translation = y_father + y_initial
+    return x_translation, y_translation
+
+def coordinates_nodes(root, current_node):
+    global time #starts from 0
+    visited.add(current_node)
+    discovery_time[current_node] = time # we keep track of the order of accessed nodes
+    slope_x, slope_y = triplets[time][:2]
+    time += 1  # increment time for the nxt node
+    if parent_list[current_node] == root:
+        node_coordinates[current_node] = (slope_x, slope_y) # no need for translation
+    else:
+        parent = parent_list[current_node]
+        parent_x, parent_y = node_coordinates[parent][:2]
+        node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
+    for neighbour in graph[current_node]:
+        if neighbour not in visited:
+            coordinates_nodes(root, neighbour)
+
 def draw_tree():
     graph = nx.Graph()
     read_graph_console(graph)
@@ -44,13 +65,24 @@ def draw_tree():
     # Calculate the subtree sizes of the tree
     subtree_sizes= {}
     root = 1
+    parent_list[root] = root
+
     calculate_subtree_sizes(graph, root, None, subtree_sizes)
     print(subtree_sizes)
 
     # Generate the Pythagorean triplets
     triplets = generate_pythagorean_triplets(subtree_sizes[root] - 1)
 
-
+    fig, ax = plt.subplots()
+    for node in node_coordinates:
+        current_coords = node_coordinates[node]
+        if parent_list[node] == root:
+            # Draw a line from (0, 0) to the node's coordinates
+            ax.plot([0, current_coords[0]], [0, current_coords[1]], marker='o', markersize=5, color='black')
+        else:
+            parent_coords = node_coordinates[parent_list[node]]
+            # Draw a line from parent's coordinates to the current node's coordinates
+            ax.plot([parent_coords[0], current_coords[0]], [parent_coords[1], current_coords[1]], marker='o',markersize=5, color='black')
 
 if __name__ == "__main__":
     draw_tree()
