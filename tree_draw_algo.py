@@ -74,16 +74,22 @@ def draw_tree():
     triplets = generate_pythagorean_triplets(subtree_sizes[root] - 1)
     print(triplets)
 
-    # fig, ax = plt.subplots()
-    # for node in node_coordinates:
-    #     current_coords = node_coordinates[node]
-    #     if parent_list[node] == root:
-    #         # Draw a line from (0, 0) to the node's coordinates
-    #         ax.plot([0, current_coords[0]], [0, current_coords[1]], marker='o', markersize=5, color='black')
-    #     else:
-    #         parent_coords = node_coordinates[parent_list[node]]
-    #         # Draw a line from parent's coordinates to the current node's coordinates
-    #         ax.plot([parent_coords[0], current_coords[0]], [parent_coords[1], current_coords[1]], marker='o',markersize=5, color='black')
+    # Calculate the coordinates of the nodes
+    calculate_nodes_coords(graph, root, root, time, node_coordinates, parent_list, triplets, discovery_time, visited)
+
+    # Draw the tree
+    fig, ax = plt.subplots()
+    for node in node_coordinates:
+        current_coords = node_coordinates[node]
+        if parent_list[node] == root:
+            # Draw a line from (0, 0) to the node's coordinates
+            ax.plot([0, current_coords[0]], [0, current_coords[1]], marker='o', markersize=5, color='black')
+        else:
+            parent_coords = node_coordinates[parent_list[node]]
+            # Draw a line from parent's coordinates to the current node's coordinates
+            ax.plot([parent_coords[0], current_coords[0]], [parent_coords[1], current_coords[1]], marker='o',markersize=5, color='black')
+
+    plt.show()
 
 if __name__ == "__main__":
     draw_tree()
