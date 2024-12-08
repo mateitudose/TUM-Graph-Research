@@ -39,7 +39,7 @@ def slope_translation(x_father, y_father, x_initial, y_initial):
     y_translation = y_father + y_initial
     return x_translation, y_translation
 
-def coordinates_nodes(graph, root, current_node, time, node_coordinates, parent_list, triplets, discovery_time, visited):
+def calculate_nodes_coords(graph, root, current_node, time, node_coordinates, parent_list, triplets, discovery_time, visited):
     visited.add(current_node)
     discovery_time[current_node] = time
     slope_x, slope_y = triplets[time][:2]
@@ -53,7 +53,7 @@ def coordinates_nodes(graph, root, current_node, time, node_coordinates, parent_
         node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
     for neighbour in graph[current_node]:
         if neighbour not in visited:
-            coordinates_nodes(graph, root, neighbour, time, node_coordinates, parent_list, triplets, discovery_time, visited)
+            calculate_nodes_coords(graph, root, neighbour, time, node_coordinates, parent_list, triplets, discovery_time, visited)
 
 
 def draw_tree():
