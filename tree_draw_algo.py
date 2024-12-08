@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import gcd
 
+time = 0
 
 def read_graph_console(graph, parent_list):
     vertices = int(input("Enter the number of vertices:\n"))
@@ -44,8 +45,9 @@ def slope_translation(x_father, y_father, x_initial, y_initial):
     return x_translation, y_translation
 
 
-def calculate_nodes_coords(graph, root, current_node, time, node_coordinates, parent_list, triplets, discovery_time,
+def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_list, triplets, discovery_time,
                            visited):
+    global time
     if current_node != root:
         visited.add(current_node)
         discovery_time[current_node] = time
@@ -59,7 +61,7 @@ def calculate_nodes_coords(graph, root, current_node, time, node_coordinates, pa
             node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
     for neighbour in graph[current_node]:
         if neighbour not in visited:
-            calculate_nodes_coords(graph, root, neighbour, time, node_coordinates, parent_list, triplets,
+            calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets,
                                    discovery_time, visited)
 
 
@@ -68,7 +70,6 @@ def draw_tree():
     visited = set()
     discovery_time = {}
     node_coordinates = {1: (0, 0)}
-    time = 0
     subtree_sizes = {}
     root = 1
     graph = nx.Graph()
@@ -87,7 +88,7 @@ def draw_tree():
     print(triplets)
 
     # Calculate the coordinates of the nodes
-    calculate_nodes_coords(graph, root, root, time, node_coordinates, parent_list, triplets, discovery_time, visited)
+    calculate_nodes_coords(graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited)
 
     # Draw the tree
     fig, ax = plt.subplots()
@@ -110,7 +111,6 @@ def draw_tree():
 
     plt.show()
     print(node_coordinates)
-
 
 if __name__ == "__main__":
     draw_tree()
