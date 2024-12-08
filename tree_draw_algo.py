@@ -84,6 +84,7 @@ def draw_tree():
 
     # Generate the Pythagorean triplets
     triplets = generate_pythagorean_triplets(subtree_sizes[root] - 1)
+    triplets.sort(key=lambda x: x[0])
     print(triplets)
 
     # Calculate the coordinates of the nodes
