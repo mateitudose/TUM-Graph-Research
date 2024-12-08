@@ -51,7 +51,6 @@ def calculate_nodes_coords(graph, root, current_node, time, node_coordinates, pa
         discovery_time[current_node] = time
         slope_x, slope_y = triplets[time][:2]
         time += 1
-        # Don't translate the root node
         if parent_list[current_node] == root:
             node_coordinates[current_node] = (slope_x, slope_y)
         else:
@@ -84,6 +83,7 @@ def draw_tree():
 
     # Generate the Pythagorean triplets
     triplets = generate_pythagorean_triplets(subtree_sizes[root] - 1)
+    triplets.sort(key=lambda x: x[0])
     print(triplets)
 
     # Calculate the coordinates of the nodes
@@ -91,6 +91,8 @@ def draw_tree():
 
     # Draw the tree
     fig, ax = plt.subplots()
+    ax.set_aspect('equal')
+    ax.set_axis_off()
     for node in node_coordinates:
         current_coords = node_coordinates[node]
         if parent_list[node] == root:
