@@ -57,7 +57,7 @@ def calculate_nodes_coords(graph, root, current_node, time, node_coordinates, pa
 
 
 def draw_tree():
-    parent_list = {}; visited = set(); discovery_time = {}; node_coordinates = {}; time = 0
+    parent_list = {1:1}; visited = set(); discovery_time = {}; node_coordinates = {}; time = 0
     subtree_sizes= {}
     root = 1
     graph = nx.Graph()
@@ -88,6 +88,10 @@ def draw_tree():
             parent_coords = node_coordinates[parent_list[node]]
             # Draw a line from parent's coordinates to the current node's coordinates
             ax.plot([parent_coords[0], current_coords[0]], [parent_coords[1], current_coords[1]], marker='o',markersize=5, color='black')
+
+    for node in node_coordinates:
+        current_coords = node_coordinates[node]
+        ax.text(current_coords[0], current_coords[1], str(node), fontsize=12)
 
     plt.show()
 
