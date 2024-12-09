@@ -30,13 +30,13 @@ def generate_pythagorean_triplets(first_n):
         m += 1
 
 
-def calculate_subtree_sizes(graph, root, parent, subtree_sizes):
-    size = 1
-    for child in graph[root]:
-        if child != parent:
-            size += calculate_subtree_sizes(graph, child, root, subtree_sizes)
-    subtree_sizes[root] = size
-    return size
+# def calculate_subtree_sizes(graph, root, parent, subtree_sizes):
+#     size = 1
+#     for child in graph[root]:
+#         if child != parent:
+#             size += calculate_subtree_sizes(graph, child, root, subtree_sizes)
+#     subtree_sizes[root] = size
+#     return size
 
 
 def slope_translation(x_father, y_father, x_initial, y_initial):
@@ -79,12 +79,12 @@ def draw_tree():
     # plt.show()
 
     # Calculate the subtree sizes of the tree
-    calculate_subtree_sizes(graph, root, None, subtree_sizes)
-    print(subtree_sizes)
+    # calculate_subtree_sizes(graph, root, None, subtree_sizes)
+    # print(subtree_sizes)
 
     # Generate the Pythagorean triplets
-    triplets = generate_pythagorean_triplets(subtree_sizes[root] - 1)
-    triplets.sort(key=lambda x: x[0])
+    triplets = generate_pythagorean_triplets(len(graph.nodes) - 1)
+    triplets.sort(key=lambda x: x[0] / x[1])
     print(triplets)
 
     # Calculate the coordinates of the nodes
@@ -111,6 +111,7 @@ def draw_tree():
 
     plt.show()
     print(node_coordinates)
+
 
 if __name__ == "__main__":
     draw_tree()
