@@ -87,7 +87,7 @@ def draw_tree():
 
     # Generate the Pythagorean triplets
     triplets = generate_pythagorean_triplets(len(graph.nodes) - 1)
-    # We can also sort the triplets by the ratio x[1] / x[0]!
+    # We can also sort the triplets by the ratio x[0] / x[1]!
     triplets.sort(key=lambda x: x[1] / x[0])
     print(triplets)
 
