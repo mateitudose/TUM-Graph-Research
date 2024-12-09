@@ -5,6 +5,7 @@ from math import gcd
 
 time = 0
 
+
 def read_graph_console(graph, parent_list):
     vertices = int(input("Enter the number of vertices:\n"))
     print("Enter the edges:\n")
@@ -72,6 +73,8 @@ def draw_tree():
     node_coordinates = {1: (0, 0)}
     subtree_sizes = {}
     root = 1
+    # Don't forget to add the root to the visited set
+    visited.add(root)
     graph = nx.Graph()
     read_graph_console(graph, parent_list)
     # pos = nx.spring_layout(graph)
@@ -84,7 +87,8 @@ def draw_tree():
 
     # Generate the Pythagorean triplets
     triplets = generate_pythagorean_triplets(len(graph.nodes) - 1)
-    triplets.sort(key=lambda x: x[0] / x[1])
+    # We can also sort the triplets by the ratio x[0] / x[1]!
+    triplets.sort(key=lambda x: x[1] / x[0])
     print(triplets)
 
     # Calculate the coordinates of the nodes
