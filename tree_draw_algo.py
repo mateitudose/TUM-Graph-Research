@@ -7,12 +7,18 @@ time = 0
 
 
 def read_graph_console(graph, parent_list):
+    strategy = str(input("Enter the graph traversal algorithm choice (DFS or BFS):\n"))
+    if (strategy != "DFS") and (strategy != "BFS"):
+        print("Invalid graph traversal algorithm choice!")
+        exit(1)
     vertices = int(input("Enter the number of vertices:\n"))
     print("Enter the edges:\n")
     for i in range(vertices - 1):
         u, v = map(int, input().split())
         graph.add_edge(u, v)
         parent_list[v] = u
+
+    return strategy
 
 
 def generate_pythagorean_triplets(first_n):
@@ -31,13 +37,13 @@ def generate_pythagorean_triplets(first_n):
         m += 1
 
 
-# def calculate_subtree_sizes(graph, root, parent, subtree_sizes):
-#     size = 1
-#     for child in graph[root]:
-#         if child != parent:
-#             size += calculate_subtree_sizes(graph, child, root, subtree_sizes)
-#     subtree_sizes[root] = size
-#     return size
+def calculate_subtree_sizes(graph, root, parent, subtree_sizes):
+    size = 1
+    for child in graph[root]:
+        if child != parent:
+            size += calculate_subtree_sizes(graph, child, root, subtree_sizes)
+    subtree_sizes[root] = size
+    return size
 
 
 def slope_translation(x_father, y_father, x_initial, y_initial):
@@ -73,29 +79,38 @@ def draw_tree():
     node_coordinates = {1: (0, 0)}
     subtree_sizes = {}
     root = 1
-    # Don't forget to add the root to the visited set
+    # Don't forget to add the root to the visited set!
     visited.add(root)
-    graph = nx.Graph()
-    read_graph_console(graph, parent_list)
-    # pos = nx.spring_layout(graph)
-    # nx.draw(graph, pos, with_labels=True)
-    # plt.show()
+    input_graph = nx.Graph()
+    final_graph = nx.Graph()
+    traversal_algorithm = read_graph_console(input_graph, parent_list)
 
-    # Calculate the subtree sizes of the tree
-    # calculate_subtree_sizes(graph, root, None, subtree_sizes)
-    # print(subtree_sizes)
+    if (traversal_algorithm == "BFS"):
+        # Calculate the subtree sizes of the tree
+        calculate_subtree_sizes(input_graph, root, None, subtree_sizes)
+        print(subtree_sizes)
+        # Sort each node's neighbors by their subtree sizes in descending order
+        # Basically, we want to visit the nodes with the largest subtrees first (BFS is more of a 'weighted' DFS)
+        for node in input_graph.nodes:
+            sorted_neighbors = sorted(input_graph[node], key=lambda x: subtree_sizes[x], reverse=True)
+            final_graph.add_edges_from((node, neighbor) for neighbor in sorted_neighbors)
+
+    # We keep the original graph if the strategy is DFS
+    else:
+        final_graph = input_graph
 
     # Generate the Pythagorean triplets
-    triplets = generate_pythagorean_triplets(len(graph.nodes) - 1)
-    # We can also sort the triplets by the ratio x[1] / x[0]!
+    triplets = generate_pythagorean_triplets(len(final_graph.nodes) - 1)
+    # IMPORTANT! Sort the slopes by their increasing angle size with the x-axis
     triplets.sort(key=lambda x: x[1] / x[0])
-    print(triplets)
+    # print(triplets)
 
     # Calculate the coordinates of the nodes
-    calculate_nodes_coords(graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited)
+    calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited)
 
     # Draw the tree
     fig, ax = plt.subplots()
+    fig.set_dpi(100)
     ax.set_aspect('equal')
     ax.set_axis_off()
     for node in node_coordinates:
