@@ -111,7 +111,7 @@ def draw_tree():
 
     # Draw the tree
     fig, ax = plt.subplots()
-    fig.set_dpi(100)
+    fig.set_dpi(200)
     ax.set_aspect('equal')
     ax.set_axis_off()
     for node in node_coordinates:
