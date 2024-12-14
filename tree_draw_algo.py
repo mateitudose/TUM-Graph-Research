@@ -1,14 +1,15 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-import numpy as np
 from math import gcd
+
+import matplotlib.pyplot as plt
+import networkx as nx
 
 time = 0
 
 
 def read_graph_console(graph, parent_list):
-    strategy = str(input("Enter the graph traversal algorithm choice (DFS or BFS):\n"))
-    if (strategy != "DFS") and (strategy != "BFS"):
+    strategy = str(input("Enter the graph traversal algorithm choice (DFS or WDFS):\n"))
+    # Choose between normal DFS and weighted DFS
+    if (strategy != "DFS") and (strategy != "WDFS"):
         print("Invalid graph traversal algorithm choice!")
         exit(1)
     vertices = int(input("Enter the number of vertices:\n"))
@@ -85,12 +86,12 @@ def draw_tree():
     final_graph = nx.Graph()
     traversal_algorithm = read_graph_console(input_graph, parent_list)
 
-    if (traversal_algorithm == "BFS"):
+    if traversal_algorithm == "WDFS":
         # Calculate the subtree sizes of the tree
         calculate_subtree_sizes(input_graph, root, None, subtree_sizes)
         print(subtree_sizes)
         # Sort each node's neighbors by their subtree sizes in descending order
-        # Basically, we want to visit the nodes with the largest subtrees first (BFS is more of a 'weighted' DFS)
+        # Basically, we want to visit the nodes with the largest subtrees first
         for node in input_graph.nodes:
             sorted_neighbors = sorted(input_graph[node], key=lambda x: subtree_sizes[x], reverse=True)
             final_graph.add_edges_from((node, neighbor) for neighbor in sorted_neighbors)
