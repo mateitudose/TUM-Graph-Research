@@ -61,12 +61,9 @@ def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_l
         discovery_time[current_node] = time
         slope_x, slope_y = triplets[time][:2]
         time += 1
-        if parent_list[current_node] == root:
-            node_coordinates[current_node] = (slope_x, slope_y)
-        else:
-            parent = parent_list[current_node]
-            parent_x, parent_y = node_coordinates[parent][:2]
-            node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
+        parent = parent_list[current_node]
+        parent_x, parent_y = node_coordinates[parent][:2]
+        node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
     for neighbour in graph[current_node]:
         if neighbour not in visited:
             calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets,
