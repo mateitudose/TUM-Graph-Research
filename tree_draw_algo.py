@@ -153,7 +153,7 @@ def draw_tree():
 
     # Calculate node positions based on level-order traversal if reusing slopes
     node_positions = get_level_order_positions(final_graph, root) if should_reuse_slopes else {
-        node: (0, time) for node, time in enumerate(range(len(final_graph.nodes)))
+        node: (0, time) for time, node in enumerate(range(1, len(final_graph.nodes) + 1))
     }
 
     # Generate Pythagorean triplets
@@ -166,7 +166,8 @@ def draw_tree():
         # For unique slopes: generate based on total nodes minus root
         triplets = generate_pythagorean_triplets(len(final_graph.nodes) - 1)
 
-    triplets.sort(key=lambda x: x[1] / x[0])
+    if triplets:
+        triplets.sort(key=lambda x: x[1] / x[0])
 
     # Calculate coordinates with reused slopes
     calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets,
