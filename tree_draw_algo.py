@@ -1,7 +1,7 @@
 from math import gcd
 import matplotlib.pyplot as plt
 import networkx as nx
-from collections import deque, defaultdict
+from collections import deque, defaultdict, OrderedDict
 
 time = 0
 
@@ -109,16 +109,34 @@ def calculate_number_levels_subtree(graph, current_root, parent_list, number_lev
     number_levels_subtree[current_root] = number_levels + 1
     return number_levels + 1
 
-def calculate_slopes_number(graph, has_child):
-    initial_number_slopes = len(graph.nodes)
-    for node in graph.nodes:
-        # If the node has children
-        if has_child[node]:
-            print(graph[node])
-            # We extract 1 from the number of slopes, because one child would reuse the same slope as the parent
-            initial_number_slopes -= 1
-    print(f"has slopes: {initial_number_slopes}")
-    return initial_number_slopes
+
+initial_slopes = 0
+
+
+def calculate_slopes_number(graph, current_node, root, visited=None):
+    global initial_slopes
+
+    # Initialize on first call
+    if visited is None:
+        visited = set()
+        initial_slopes = len(graph.nodes)
+
+    visited.add(current_node)
+
+    # Special case for root: if it has any children
+    if current_node == root:
+        if len(graph[current_node]) > 0:
+            initial_slopes -= 1
+    # For non-root nodes: if they have children (excluding the parent)
+    elif len(graph[current_node]) > 1:  # At least one child besides the parent
+        initial_slopes -= 1
+
+    # Continue DFS
+    for neighbor in graph[current_node]:
+        if neighbor not in visited:
+            calculate_slopes_number(graph, neighbor, root, visited)
+
+    return initial_slopes
 
 def slope_translation(x_father, y_father, x_initial, y_initial):
     x_translation = x_father + x_initial
@@ -127,7 +145,7 @@ def slope_translation(x_father, y_father, x_initial, y_initial):
 
 
 def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_list, triplets, discovery_time,
-                           visited, should_reuse_slopes, slope_assigned, greatest_index=-1):
+                           visited, should_reuse_slopes, slope_assigned, node_order_matrix, greatest_index=-1):
     if not should_reuse_slopes:
         global time
         if current_node != root:
@@ -142,7 +160,7 @@ def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_l
             if neighbour not in visited:
                 parent_list[neighbour] = current_node
                 calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets, discovery_time,
-                                       visited, should_reuse_slopes, slope_assigned, greatest_index)
+                                       visited, should_reuse_slopes, slope_assigned, node_order_matrix, greatest_index)
     else:
         if current_node == root:
             slope_assigned[current_node] = 0
@@ -150,15 +168,16 @@ def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_l
             visited.add(current_node)
             parent = parent_list[current_node]
             parent_x, parent_y = node_coordinates[parent][:2]
+
             # If it is the first child of its parent
             #print(f"leftmost child of 2 is {list(graph[2])[0]}")
             # The leftmost child would be on position 1, because on position 0 we have its father who will have more levels.
             # POSITION 1 IS ONLY THE RIGHT THING TO DO WHEN THE PARENT IS NOT THE ROOT. IF IT IS THE ROOT THEN IT WILL BE AT POSITION 0
-            if parent != root and list(graph[parent])[1] == current_node and parent in slope_assigned:
+            if parent != root and node_order_matrix[parent][1] == current_node and parent in slope_assigned:
                 slope_assigned[current_node] = slope_assigned[parent]
                 slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
                 node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
-            elif parent == root and list(graph[parent])[0] == current_node and parent in slope_assigned:
+            elif parent == root and node_order_matrix[parent][0] == current_node and parent in slope_assigned:
                 slope_assigned[current_node] = slope_assigned[parent]
                 slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
                 node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
@@ -169,15 +188,21 @@ def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_l
                 slope_assigned[current_node] = greatest_index + 1
                 slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
                 node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
-        for neighbour in graph[current_node]:
+        for neighbour in node_order_matrix[current_node]:
             if neighbour not in visited:
                 parent_list[neighbour] = current_node
                 calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets,
                                        discovery_time,
-                                       visited, should_reuse_slopes, slope_assigned, greatest_index)
+                                       visited, should_reuse_slopes, slope_assigned, node_order_matrix, greatest_index)
+
+def ordered_graph():
+    graph = nx.Graph()
+    # It will keep the order of my neighbors
+    graph._adj = defaultdict(OrderedDict)
+    return graph
 
 def draw_tree():
-    input_graph = nx.Graph()
+    input_graph = ordered_graph()
     has_child = defaultdict(bool)
     traversal_algorithm, should_reuse_slopes = read_graph_console(input_graph, {}, has_child)
 
@@ -190,9 +215,10 @@ def draw_tree():
     discovery_time = {}
     node_coordinates = {root: (0, 0)}
     subtree_sizes = {}
+    node_order_matrix = {}
     # Don't forget to add the root to the visited set!
     visited.add(root)
-    final_graph = nx.Graph()
+    final_graph = ordered_graph()
 
     if traversal_algorithm == "WDFS" and not should_reuse_slopes:
         # Calculate the subtree sizes of the tree
@@ -203,8 +229,9 @@ def draw_tree():
         for node in input_graph.nodes:
             sorted_neighbors = sorted(input_graph[node], key=lambda x: subtree_sizes.get(x, 0), reverse=True)
             final_graph.add_edges_from((node, neighbor) for neighbor in sorted_neighbors)
+            node_order_matrix[node] = sorted_neighbors
 
-    # We keep the original graph if the strategy is DFS
+            # We keep the original graph if the strategy is DFS
     elif traversal_algorithm == "DFS" and not should_reuse_slopes:
         final_graph = input_graph
     #Consider each subtree at first with 0 levels
@@ -216,21 +243,20 @@ def draw_tree():
             # Sort each node's children by the number of levels of their subtree in descending order
             sorted_children = sorted(input_graph[node],key=lambda x: number_levels_subtree[x], reverse=True)
             final_graph.add_edges_from((node, child) for child in sorted_children)
+            node_order_matrix[node] = sorted_children
     # Generate the Pythagorean triplets
     if not should_reuse_slopes:
         triplets = generate_pythagorean_triplets(len(final_graph.nodes) - 1)
     # If I want to reuse slopes
     else:
-        number_slopes = calculate_slopes_number(final_graph, has_child)
+        number_slopes = calculate_slopes_number(final_graph, root, has_child)
         triplets = generate_pythagorean_triplets(number_slopes)
     # IMPORTANT! Sort the slopes by their increasing angle size with the x-axis
     triplets.sort(key=lambda x: x[1] / x[0])
     # print(triplets)
     # Calculate the coordinates of the nodes
-    calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited, should_reuse_slopes, slope_assigned, 0)
-    if should_reuse_slopes:
-        for node in final_graph.nodes:
-            print(f"the order of the children of node {node} is {list(final_graph[node])[0]}")
+    calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited, should_reuse_slopes, slope_assigned, node_order_matrix, -1)
+
     # Draw the tree
     fig, ax = plt.subplots()
     fig.set_dpi(200)
