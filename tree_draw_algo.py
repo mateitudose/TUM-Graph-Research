@@ -152,8 +152,13 @@ def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_l
             parent_x, parent_y = node_coordinates[parent][:2]
             # If it is the first child of its parent
             #print(f"leftmost child of 2 is {list(graph[2])[0]}")
-            # The leftmost child would be on position 1, because on position 0 we have its father who will have more levels
-            if list(graph[parent])[1] == current_node and parent in slope_assigned:
+            # The leftmost child would be on position 1, because on position 0 we have its father who will have more levels.
+            # POSITION 1 IS ONLY THE RIGHT THING TO DO WHEN THE PARENT IS NOT THE ROOT. IF IT IS THE ROOT THEN IT WILL BE AT POSITION 0
+            if parent != root and list(graph[parent])[1] == current_node and parent in slope_assigned:
+                slope_assigned[current_node] = slope_assigned[parent]
+                slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
+                node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
+            elif parent == root and list(graph[parent])[0] == current_node and parent in slope_assigned:
                 slope_assigned[current_node] = slope_assigned[parent]
                 slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
                 node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
@@ -223,7 +228,9 @@ def draw_tree():
     # print(triplets)
     # Calculate the coordinates of the nodes
     calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited, should_reuse_slopes, slope_assigned, 0)
-
+    if should_reuse_slopes:
+        for node in final_graph.nodes:
+            print(f"the order of the children of node {node} is {list(final_graph[node])[0]}")
     # Draw the tree
     fig, ax = plt.subplots()
     fig.set_dpi(200)
