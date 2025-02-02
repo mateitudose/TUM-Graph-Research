@@ -1,7 +1,7 @@
 from math import gcd
 import matplotlib.pyplot as plt
 import networkx as nx
-from collections import deque, defaultdict, OrderedDict
+from collections import deque
 
 time = 0
 
@@ -27,7 +27,6 @@ def find_diameter_and_center(graph):
     end1, _ = find_farthest_node(graph, list(graph.nodes())[0])
 
     # Find the other end of diameter
-
     end2, diameter = find_farthest_node(graph, end1)
 
     # Find the path of the diameter
@@ -38,25 +37,19 @@ def find_diameter_and_center(graph):
 
     return center
 
-def read_graph_console(graph, parent_list, has_child):
+def read_graph_console(graph, parent_list):
     strategy = str(input("Enter the graph traversal algorithm choice (DFS or WDFS):\n"))
+    # Choose between normal DFS and weighted DFS
     if (strategy != "DFS") and (strategy != "WDFS"):
         print("Invalid graph traversal algorithm choice!")
         exit(1)
-
-    reuse_slopes = input("Would you like to reuse slopes for nodes at same positions? (y/n):\n").lower()
-    if reuse_slopes not in ['y', 'n']:
-        print("Invalid choice for slope reuse!")
-        exit(1)
-
     vertices = int(input("Enter the number of vertices:\n"))
     print("Enter the edges:\n")
     for i in range(vertices - 1):
         u, v = map(int, input().split())
         graph.add_edge(u, v)
-        parent_list[v] = u
-        has_child[u] = True
-    return strategy, (reuse_slopes == 'y')
+
+    return strategy
 
 
 def generate_pythagorean_triplets(first_n):
@@ -84,60 +77,6 @@ def calculate_subtree_sizes(graph, root, parent, subtree_sizes):
     return size
 
 
-def calculate_number_levels_subtree(graph, current_root, parent_list, number_levels_subtree, visited=None):
-    # Initialize visited set on first call
-    if visited is None:
-        visited = set()
-    # If we've already visited this node
-    if current_root in visited:
-        return 0
-    # Mark current node as visited
-    visited.add(current_root)
-    # If there are no children we consider the root on level 1
-    if not graph[current_root]:
-        number_levels_subtree[current_root] = 1
-        return 1
-    number_levels = 0
-    for child in graph[current_root]:
-        # Skip the parent to avoid going back up the tree
-        if child in parent_list and parent_list[child] == current_root:
-            continue
-        # Calculate max depth among all children
-        child_levels = calculate_number_levels_subtree(graph, child, parent_list, number_levels_subtree, visited)
-        number_levels = max(number_levels, child_levels)
-    # Store and return result
-    number_levels_subtree[current_root] = number_levels + 1
-    return number_levels + 1
-
-
-initial_slopes = 0
-
-
-def calculate_slopes_number(graph, current_node, root, visited=None):
-    global initial_slopes
-
-    # Initialize on first call
-    if visited is None:
-        visited = set()
-        initial_slopes = len(graph.nodes)
-
-    visited.add(current_node)
-
-    # Special case for root: if it has any children
-    if current_node == root:
-        if len(graph[current_node]) > 0:
-            initial_slopes -= 1
-    # For non-root nodes: if they have children (excluding the parent)
-    elif len(graph[current_node]) > 1:  # At least one child besides the parent
-        initial_slopes -= 1
-
-    # Continue DFS
-    for neighbor in graph[current_node]:
-        if neighbor not in visited:
-            calculate_slopes_number(graph, neighbor, root, visited)
-
-    return initial_slopes
-
 def slope_translation(x_father, y_father, x_initial, y_initial):
     x_translation = x_father + x_initial
     y_translation = y_father + y_initial
@@ -145,66 +84,26 @@ def slope_translation(x_father, y_father, x_initial, y_initial):
 
 
 def calculate_nodes_coords(graph, root, current_node, node_coordinates, parent_list, triplets, discovery_time,
-                           visited, should_reuse_slopes, slope_assigned, node_order_matrix, greatest_index=-1):
-    if not should_reuse_slopes:
-        global time
-        if current_node != root:
-            visited.add(current_node)
-            discovery_time[current_node] = time
-            slope_x, slope_y = triplets[time][:2]
-            time += 1
-            parent = parent_list[current_node]
-            parent_x, parent_y = node_coordinates[parent][:2]
-            node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
-        for neighbour in graph[current_node]:
-            if neighbour not in visited:
-                parent_list[neighbour] = current_node
-                calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets, discovery_time,
-                                       visited, should_reuse_slopes, slope_assigned, node_order_matrix, greatest_index)
-    else:
-        if current_node == root:
-            slope_assigned[current_node] = 0
-        if current_node != root:
-            visited.add(current_node)
-            parent = parent_list[current_node]
-            parent_x, parent_y = node_coordinates[parent][:2]
+                           visited):
+    global time
+    if current_node != root:
+        visited.add(current_node)
+        discovery_time[current_node] = time
+        slope_x, slope_y = triplets[time][:2]
+        time += 1
+        parent = parent_list[current_node]
+        parent_x, parent_y = node_coordinates[parent][:2]
+        node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
+    for neighbour in graph[current_node]:
+        if neighbour not in visited:
+            parent_list[neighbour] = current_node
+            calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets,
+                                   discovery_time, visited)
 
-            # If it is the first child of its parent
-            #print(f"leftmost child of 2 is {list(graph[2])[0]}")
-            # The leftmost child would be on position 1, because on position 0 we have its father who will have more levels.
-            # POSITION 1 IS ONLY THE RIGHT THING TO DO WHEN THE PARENT IS NOT THE ROOT. IF IT IS THE ROOT THEN IT WILL BE AT POSITION 0
-            if parent != root and node_order_matrix[parent][1] == current_node and parent in slope_assigned:
-                slope_assigned[current_node] = slope_assigned[parent]
-                slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
-                node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
-            elif parent == root and node_order_matrix[parent][0] == current_node and parent in slope_assigned:
-                slope_assigned[current_node] = slope_assigned[parent]
-                slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
-                node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
-            else:
-                for node in graph:
-                    if node in slope_assigned and slope_assigned[node] > greatest_index:
-                        greatest_index = slope_assigned[node]
-                slope_assigned[current_node] = greatest_index + 1
-                slope_x, slope_y = triplets[slope_assigned[current_node]][:2]
-                node_coordinates[current_node] = slope_translation(parent_x, parent_y, slope_x, slope_y)
-        for neighbour in node_order_matrix[current_node]:
-            if neighbour not in visited:
-                parent_list[neighbour] = current_node
-                calculate_nodes_coords(graph, root, neighbour, node_coordinates, parent_list, triplets,
-                                       discovery_time,
-                                       visited, should_reuse_slopes, slope_assigned, node_order_matrix, greatest_index)
-
-def ordered_graph():
-    graph = nx.Graph()
-    # It will keep the order of my neighbors
-    graph._adj = defaultdict(OrderedDict)
-    return graph
 
 def draw_tree():
-    input_graph = ordered_graph()
-    has_child = defaultdict(bool)
-    traversal_algorithm, should_reuse_slopes = read_graph_console(input_graph, {}, has_child)
+    input_graph = nx.Graph()
+    traversal_algorithm = read_graph_console(input_graph, {})
 
     # Find the center of the graph to use as root
     root = find_diameter_and_center(input_graph)
@@ -215,12 +114,12 @@ def draw_tree():
     discovery_time = {}
     node_coordinates = {root: (0, 0)}
     subtree_sizes = {}
-    node_order_matrix = {}
     # Don't forget to add the root to the visited set!
     visited.add(root)
-    final_graph = ordered_graph()
 
-    if traversal_algorithm == "WDFS" and not should_reuse_slopes:
+    final_graph = nx.Graph()
+
+    if traversal_algorithm == "WDFS":
         # Calculate the subtree sizes of the tree
         calculate_subtree_sizes(input_graph, root, None, subtree_sizes)
         print(subtree_sizes)
@@ -229,33 +128,19 @@ def draw_tree():
         for node in input_graph.nodes:
             sorted_neighbors = sorted(input_graph[node], key=lambda x: subtree_sizes.get(x, 0), reverse=True)
             final_graph.add_edges_from((node, neighbor) for neighbor in sorted_neighbors)
-            node_order_matrix[node] = sorted_neighbors
 
-            # We keep the original graph if the strategy is DFS
-    elif traversal_algorithm == "DFS" and not should_reuse_slopes:
-        final_graph = input_graph
-    #Consider each subtree at first with 0 levels
-    number_levels_subtree = {}
-    slope_assigned = {}
-    if should_reuse_slopes:
-        calculate_number_levels_subtree(input_graph, root, parent_list, number_levels_subtree)
-        for node in input_graph.nodes:
-            # Sort each node's children by the number of levels of their subtree in descending order
-            sorted_children = sorted(input_graph[node],key=lambda x: number_levels_subtree[x], reverse=True)
-            final_graph.add_edges_from((node, child) for child in sorted_children)
-            node_order_matrix[node] = sorted_children
-    # Generate the Pythagorean triplets
-    if not should_reuse_slopes:
-        triplets = generate_pythagorean_triplets(len(final_graph.nodes) - 1)
-    # If I want to reuse slopes
+    # We keep the original graph if the strategy is DFS
     else:
-        number_slopes = calculate_slopes_number(final_graph, root, has_child)
-        triplets = generate_pythagorean_triplets(number_slopes)
+        final_graph = input_graph
+
+    # Generate the Pythagorean triplets
+    triplets = generate_pythagorean_triplets(len(final_graph.nodes) - 1)
     # IMPORTANT! Sort the slopes by their increasing angle size with the x-axis
     triplets.sort(key=lambda x: x[1] / x[0])
     # print(triplets)
+
     # Calculate the coordinates of the nodes
-    calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited, should_reuse_slopes, slope_assigned, node_order_matrix, -1)
+    calculate_nodes_coords(final_graph, root, root, node_coordinates, parent_list, triplets, discovery_time, visited)
 
     # Draw the tree
     fig, ax = plt.subplots()
